@@ -2209,6 +2209,24 @@ var oncall = {
             threshold,
             now = moment();
 
+        var last_event = fetch('/api/v0/events?team__eq=' + self.data.teamName).then(function(response) {
+          return response.json();
+        }).then(function(data) {
+					data.sort(function(a, b){
+              if (a.end < b.end) {
+                return -1;
+              }
+              if (a.end > b.end) {
+                return 1;
+              }
+              return 0;
+          });
+          var last_entry_end = data[data.length - 1].end;
+          self.last_entry_end = moment.unix(last_entry_end);
+        }).catch(function(err) {
+          self.last_entry_end = self.now;
+        });
+
         $modal.on('shown.bs.modal', function(e){
           scheduleData = JSON.parse($(e.relatedTarget).parents(self.data.scheduleItem).attr('data-model'));
           scheduleId = scheduleData.id;
@@ -2227,7 +2245,7 @@ var oncall = {
           $calContainer.find('[data-schedule-id="' + scheduleId + '"]').attr('data-highlighted', true);
           $modal.attr('data-schedule-id', scheduleId);
           $modalThreshold.text(threshold + ' Days');
-          $modalDate.val(now.format('YYYY/MM/DD'));
+          $modalDate.val(self.last_entry_end.format('YYYY/MM/DD'));
         }).on('hidden.bs.modal', function(e){
           $(this).find('.alert').remove();
         });
